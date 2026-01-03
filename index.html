@@ -1,335 +1,111 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uz">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>BILIM STRATEGIYASI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BILIM JANGI ONLINE</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap");
-      body {
-        font-family: "Montserrat", sans-serif;
-        background: #020617;
-        color: #f8fafc;
-        min-height: 100vh;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .glass {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(15px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .gradient-text {
-        background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-      }
-
-      .loader-sticker {
-        width: 45px;
-        height: 45px;
-        border: 5px solid #1e293b;
-        border-top: 5px solid #22d3ee;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: 10px auto;
-      }
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      #wheel {
-        position: relative;
-        border-radius: 50%;
-        border: 8px solid #1e293b;
-        width: 280px;
-        height: 280px;
-        margin: 0 auto;
-        transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);
-      }
-      .wheel-label {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform-origin: 0 0;
-        width: 50%;
-        text-align: right;
-        padding-right: 15px;
-        font-weight: 900;
-        font-size: 10px;
-        color: white;
-        text-shadow: 1px 1px 2px black;
-        pointer-events: none;
-      }
-      .pointer {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        transform: translateX(-50%) translateY(-10px);
-        width: 0;
-        height: 0;
-        border-left: 15px solid transparent;
-        border-right: 15px solid transparent;
-        border-top: 25px solid #fbbf24;
-        z-index: 50;
-      }
+      body { font-family: "Montserrat", sans-serif; background: #020617; color: #f8fafc; min-height: 100vh; margin: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+      .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
+      .gradient-text { background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      #wheel { width: 260px; height: 260px; border-radius: 50%; border: 8px solid #1e293b; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1); position: relative; }
+      .pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #fbbf24; z-index: 50; }
     </style>
   </head>
   <body>
-    <div id="app" class="w-full max-w-4xl px-4 py-2"></div>
-
+    <div id="app" class="w-full max-w-md px-4 text-center"></div>
     <script>
-      // Yangilangan va ishonchli audio havolalari
-      const Sounds = {
-        spin: new Audio("https://www.soundjay.com/misc/sounds/wheel-fortune-1.mp3"),
-        correct: new Audio("https://www.soundjay.com/buttons/sounds/button-37.mp3"),
-        wrong: new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3"),
-        finish: new Audio("https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3"),
+      const firebaseConfig = {
+        apiKey: "AIzaSyBaUpRxN4xHSoEY3CGp0TI3wY2BQ3U8OTM",
+        authDomain: "topishmoq-4073b.firebaseapp.com",
+        databaseURL: "https://topishmoq-4073b-default-rtdb.firebaseio.com",
+        projectId: "topishmoq-4073b",
+        storageBucket: "topishmoq-4073b.firebasestorage.app",
+        messagingSenderId: "1026823461436",
+        appId: "1:1026823461436:web:99791f92b195f820e6c139",
       };
-
-      // Ovozga ruxsat berish uchun audio elementlarni yuklab qo'yamiz
-      function unlockAudio() {
-        Object.values(Sounds).forEach(audio => {
-          audio.play().then(() => {
-            audio.pause();
-            audio.currentTime = 0;
-          }).catch(() => {});
-        });
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.database();
+      let roomId = "", myName = "";
+      const riddles = [
+        { q: "Mitti mitti bo'yi bor, yetti qavat to'ni bor.", a: "PIYOZ" },
+        { q: "Yer ostida oltin qoziq.", a: "SABZI" },
+        { q: "Suvda tug'iladi, suvda o'ladi.", a: "TUZ" },
+        { q: "Kunduzi uxlab, kechasi uchar.", a: "SOYABON" },
+        { q: "Tili boru jag'i yo'q, xabar berar joni yo'q.", a: "XAT" },
+        { q: "O'zi koptokdek, ichi qondek, tishi donday.", a: "ANOR" },
+        { q: "Osmonda bir patnis non, cheti tishlangan hamon.", a: "OY" },
+        { q: "Qora sigirim yaladi, qizil sigirim qochdi.", a: "OT" },
+        { q: "Oyog'i yo'q, qo'li yo'q, eshikni ochar.", a: "SHAMOL" },
+        { q: "Yozda kiyinar, qishda yechinar.", a: "DARAXT" },
+        { q: "Usti tosh, osti tosh, o'rtasida mitti bosh.", a: "TOSHBAQA" },
+        { q: "O'zi bitta, ko'zi mingtadan ko'p.", a: "GALVIR" },
+        { q: "Qanoti bor, uchmaydi, oyog'i bor, yurmaydi.", a: "BALIQ" },
+        { q: "Qizil uyning ichida qora bolalar.", a: "TARVUZ" },
+        { q: "Yursa izi yo'q, kelsa ovozi yo'q.", a: "KEMA" },
+        { q: "Bir ko'zada ikki xil suv.", a: "TUXUM" },
+        { q: "Dumi bor, ot emas, qanoti bor, qush emas.", a: "SAMOLYOT" },
+        { q: "Tugmasi bor, sasi yo'q, dunyodan xabari bor.", a: "TELEVIZOR" },
+        { q: "Kelsang kelaverasan, o'zing bilan olib keta olmaysan.", a: "KOLANKA" },
+        { q: "Uzoqdan ko'rinsa tog'dek, yaqiniga borsa bog'dek.", a: "PAXTA" }
+      ];
+      function showStart() {
+        document.getElementById("app").innerHTML = `
+          <div class="glass p-8 rounded-[2rem]">
+            <h1 class="text-3xl font-black mb-6 gradient-text italic">BILIM JANGI</h1>
+            <input id="nInp" placeholder="ISMINGIZ (LOTIN)" class="w-full p-4 mb-3 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
+            <input id="rInp" type="number" placeholder="XONA KODI" class="w-full p-4 mb-6 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
+            <button onclick="join()" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase active:scale-95 shadow-lg">Kirish</button>
+          </div>`;
       }
-
-      function playSfx(audio) {
-        audio.currentTime = 0;
-        audio.play().catch((e) => console.log("Ovoz bloklandi"));
+      function join() {
+        roomId = document.getElementById("rInp").value;
+        myName = document.getElementById("nInp").value.toUpperCase();
+        if (!roomId || !myName) return alert("Ism va xona kodini kiriting!");
+        db.ref("rooms/" + roomId + "/players/" + myName).set({ score: 0 });
+        db.ref("rooms/" + roomId).on("value", (snap) => render(snap.val()));
       }
-
-      function speak(text) {
-        try {
-          window.speechSynthesis.cancel();
-          const msg = new SpeechSynthesisUtterance(text);
-          msg.lang = "ru-RU";
-          msg.rate = 0.9; // Biroz sekinroq va aniqroq o'qish uchun
-          window.speechSynthesis.speak(msg);
-        } catch (e) {
-          console.error("Nutq tizimida xato");
-        }
+      function render(data) {
+        if (!data) return;
+        const players = data.players || {};
+        const pKeys = Object.keys(players);
+        let html = `<div class="grid grid-cols-2 gap-2 mb-6">` +
+          pKeys.map((k) => `<div class="glass p-2 rounded-lg ${k === myName ? "border-cyan-500 border-2" : ""}"><p class="text-[10px] font-bold opacity-70">${k}</p><p class="text-xl font-black">${players[k].score}</p></div>`).join("") +
+          `</div>`;
+        html += `<div class="relative inline-block mb-6"><div class="pointer"></div><div id="wheel" style="transform: rotate(${data.rot || 0}deg); background: conic-gradient(#22d3ee 0% 50%, #f43f5e 50% 100%)"></div></div>
+          <button onclick="spin()" class="w-full bg-white text-black py-4 rounded-xl font-black uppercase active:scale-95 shadow-xl">Aylantirish</button>`;
+        const modalCheck = document.getElementById("modal");
+        if (data.question && !data.answered && !modalCheck) { showModal(data.question); } 
+        else if (data.answered && modalCheck) { modalCheck.remove(); }
+        document.getElementById("app").innerHTML = html;
       }
-
-      const latToCyr = {
-        a: "а", b: "б", v: "в", g: "г", d: "д", e: "е", yo: "ё", j: "ж", z: "з", i: "и", y: "й", k: "к", l: "л", m: "м", n: "н", o: "о", p: "п", r: "р", s: "с", t: "т", u: "у", f: "ф", x: "х", ts: "ц", ch: "ч", sh: "ш", yu: "ю", ya: "я", "o'": "ў", "g'": "ғ",
-      };
-
-      function normalize(text) {
-        let t = text.toLowerCase().trim();
-        let cyr = t
-          .replace(/sh/g, "ш").replace(/ch/g, "ч").replace(/yo/g, "ё").replace(/yu/g, "ю").replace(/ya/g, "я")
-          .split("").map((char) => latToCyr[char] || char).join("");
-        return [t, cyr];
+      function spin() {
+        const rot = Math.random() * 360 + 1440 + Math.random() * 360;
+        const qIdx = Math.floor(Math.random() * riddles.length);
+        db.ref("rooms/" + roomId).update({ rot: rot, question: riddles[qIdx], answered: false });
       }
-
-      const Model = {
-        riddles: [
-          { q: "Ona legkaya i krasivaya (letayet).", uz: "U yengil va chiroyli (uchadi).", a: ["бабочка", "kapalak"] },
-          { q: "Ona bolshaya (perevozit gruz).", uz: "U katta (yuk tashiydi).", a: ["машина", "mashina", "gruzovik"] },
-          { q: "Yego vidim v reke (plavayet).", uz: "Uni daryoda ko'ramiz (suzadi).", a: ["рыба", "baliq"] },
-          { q: "Ona ostraya (dlya dereva).", uz: "U o'tkir (daraxt uchun).", a: ["пила", "arra"] },
-          { q: "Yego vidim v nebe (ptitsa-xishnik).", uz: "Uni osmonda ko'ramiz (yirtqich qush).", a: ["орел", "burgut"] },
-          { q: "Ona seraya (jivet v podvale).", uz: "U kulrang (erto'lada yashaydi).", a: ["мышь", "sichqon"] },
-          { q: "Yego yedim letom (bolshoy).", uz: "Uni yozda yeymiz (katta).", a: ["арбуз", "tarvuz"] },
-          { q: "Ona sladkaya (kak oblako).", uz: "U shirin (bulut kabi).", a: ["вата", "paxta qand"] },
-        ],
-        state: {
-          view: "home",
-          playerList: [],
-          stats: {},
-          currentPlayerIndex: 0,
-          rotation: 0,
-          isSpinning: false,
-          lastResult: null,
-        },
-      };
-
-      const Controller = {
-        init() {
-          this.changeView("home");
-        },
-        changeView(view) {
-          Model.state.view = view;
-          const app = document.getElementById("app");
-          if (view === "home") {
-            app.innerHTML = `
-                <div class="text-center">
-                    <h1 class="text-5xl md:text-7xl font-black mb-12 gradient-text italic uppercase tracking-tighter">BILIM STRATEGIYASI</h1>
-                    <button onclick="unlockAudio(); Controller.changeView('setup')" class="glass p-12 px-24 rounded-[2.5rem] text-3xl font-black uppercase active:scale-95 transition-all shadow-2xl">START</button>
-                </div>`;
-          } else if (view === "setup") {
-            app.innerHTML = `<div class="glass p-8 rounded-[2rem] max-w-sm mx-auto text-center"><h2 class="text-xl font-bold mb-6 text-cyan-400 uppercase">O'yinchilar soni</h2><input id="pCount" type="number" min="1" max="5" value="1" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 mb-6 text-center text-3xl text-white font-bold outline-none focus:border-cyan-500"><button onclick="Controller.setupNames()" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase active:scale-95 transition-all">Davom etish</button></div>`;
-          } else if (view === "play") {
-            this.renderPlay();
-          }
-        },
-        setupNames() {
-          const count = parseInt(document.getElementById("pCount").value);
-          let inputs = "";
-          for (let i = 1; i <= count; i++)
-            inputs += `<input id="n${i}" type="text" placeholder="PLAYER ${i}" class="w-full bg-slate-900 p-4 rounded-xl border border-slate-700 mb-3 text-white uppercase font-bold text-center outline-none">`;
-          document.getElementById("app").innerHTML = `<div class="glass p-8 rounded-[2rem] max-w-sm mx-auto text-center"><h2 class="text-xl font-bold mb-6">ISMLAR</h2>${inputs}<button onclick="Controller.startGame(${count})" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase mt-4 active:scale-95">TAYYOR</button></div>`;
-        },
-        startGame(count) {
-          Model.state.playerList = [];
-          for (let i = 1; i <= count; i++) {
-            const name = document.getElementById(`n${i}`).value.trim().toUpperCase() || `P${i}`;
-            Model.state.playerList.push(name);
-            Model.state.stats[name] = { score: 0, correct: 0, wrong: 0 };
-          }
-          this.changeView("play");
-          if (count === 1) setTimeout(() => this.showQuestion(), 500);
-        },
-        renderPlay() {
-          const pList = Model.state.playerList;
-          const isSingle = pList.length === 1;
-          const currIdx = Model.state.currentPlayerIndex;
-          const res = Model.state.lastResult;
-
-          document.getElementById("app").innerHTML = `
-                <div class="flex flex-col items-center w-full">
-                    <div class="grid grid-cols-2 gap-2 mb-4 w-full">
-                        ${pList.map((p, i) => `
-                            <div class="glass p-3 rounded-xl border-2 ${currIdx === i ? "border-cyan-500 bg-cyan-500/10" : "border-transparent opacity-60"} text-center">
-                                <div class="text-[10px] uppercase font-black">${p}</div>
-                                <div class="text-xl font-black">${Model.state.stats[p].score}</div>
-                            </div>`).join("")}
-                    </div>
-                    <div class="h-28 flex flex-col items-center justify-center mb-4">
-                        ${res ? `
-                            <div class="text-center p-3 rounded-2xl ${res.type === "ok" ? "bg-emerald-500/20" : "bg-rose-500/20"} border border-white/10 w-full">
-                                <div class="font-black ${res.type === "ok" ? "text-emerald-400" : "text-rose-500"} uppercase text-lg">${res.msg}</div>
-                                ${res.answer ? `<div class="text-slate-300 text-xs mt-1 italic">To'g'ri: <span class="text-white font-bold">${res.answer}</span></div>` : ""}
-                                <div class="loader-sticker"></div>
-                            </div>` : ""}
-                    </div>
-                    ${!isSingle ? `
-                        <div class="relative mb-6 scale-95">
-                            <div class="pointer"></div>
-                            <div id="wheel" style="transform: rotate(${Model.state.rotation}deg); background: ${this.getConic()}">
-                                ${pList.map((p, i) => `<div class="wheel-label" style="transform: rotate(${(360/pList.length)*i + (360/pList.length/2)}deg) translateY(-50%)">${p}</div>`).join("")}
-                            </div>
-                        </div>
-                        <button onclick="Controller.spin()" class="bg-white text-black px-12 py-4 rounded-full font-black text-xl uppercase shadow-xl active:scale-90 mb-4 transition-all">SPIN</button>
-                    ` : ""}
-                    <button onclick="Controller.finishGame()" class="bg-rose-600/20 border border-rose-600/50 text-rose-500 px-8 py-2 rounded-xl font-bold uppercase text-xs active:scale-95 transition-all mt-4">Yakunlash</button>
-                </div>`;
-        },
-        getConic() {
-          const colors = ["#22d3ee", "#f43f5e", "#fbbf24", "#10b981", "#8b5cf6"];
-          const deg = 360 / Model.state.playerList.length;
-          return "conic-gradient(" + Model.state.playerList.map((_, i) => `${colors[i % colors.length]} ${i * deg}deg ${(i + 1) * deg}deg`).join(",") + ")";
-        },
-        spin() {
-          if (Model.state.isSpinning) return;
-          Model.state.isSpinning = true;
-          Model.state.lastResult = null;
-          this.renderPlay();
-          playSfx(Sounds.spin);
-
-          const slice = 360 / Model.state.playerList.length;
-          const rand = Math.floor(Math.random() * Model.state.playerList.length);
-          Model.state.rotation += 1440 + (360 - rand * slice - slice / 2 - (Model.state.rotation % 360));
-
-          const wheel = document.getElementById("wheel");
-          if (wheel) wheel.style.transform = `rotate(${Model.state.rotation}deg)`;
-
-          setTimeout(() => {
-            Model.state.isSpinning = false;
-            Model.state.currentPlayerIndex = rand;
-            this.showQuestion();
-          }, 4000);
-        },
-        showQuestion() {
-          if (Model.riddles.length === 0) { this.finishGame(); return; }
-          Model.currentRiddle = Model.riddles.splice(Math.floor(Math.random() * Model.riddles.length), 1)[0];
-
-          const modalHtml = `
-                <div id="modal" class="fixed inset-0 bg-slate-950/98 flex items-center justify-center p-4 z-50">
-                    <div class="glass p-8 rounded-[2.5rem] w-full max-w-sm text-center border border-white/10 shadow-2xl">
-                        <h2 class="text-2xl font-black mb-2 italic">"${Model.currentRiddle.q}"</h2>
-                        <p class="text-slate-400 mb-8 text-sm italic">(${Model.currentRiddle.uz})</p>
-                        <input id="ansInp" type="text" autocomplete="off" class="w-full bg-slate-900 border-2 border-slate-700 p-5 rounded-2xl mb-6 text-center text-2xl font-black text-white uppercase outline-none focus:border-cyan-500">
-                        <button onclick="Controller.check()" class="w-full bg-cyan-600 py-5 rounded-2xl font-black text-xl uppercase active:scale-95">OK</button>
-                    </div>
-                </div>`;
-          document.body.insertAdjacentHTML("beforeend", modalHtml);
-          speak(Model.currentRiddle.q);
-          const inp = document.getElementById("ansInp");
-          setTimeout(() => inp.focus(), 200);
-          inp.onkeypress = (e) => { if (e.key === "Enter") this.check(); };
-        },
-        check() {
-          const val = document.getElementById("ansInp").value.trim().toLowerCase();
-          if (!val) return;
-          const userVars = normalize(val);
-          let isOk = false;
-          Model.currentRiddle.a.forEach((a) => {
-            if (userVars.some((uv) => normalize(a).includes(uv))) isOk = true;
-          });
-
-          const p = Model.state.playerList[Model.state.currentPlayerIndex];
-          if (isOk) {
-            Model.state.stats[p].score += 10;
-            Model.state.stats[p].correct += 1;
-            Model.state.lastResult = { type: "ok", msg: "TO'G'RI!" };
-            playSfx(Sounds.correct);
-          } else {
-            Model.state.stats[p].wrong += 1;
-            Model.state.lastResult = { type: "err", msg: "XATO!", answer: Model.currentRiddle.a[0].toUpperCase() };
-            playSfx(Sounds.wrong);
-          }
-          document.getElementById("modal").remove();
-          this.renderPlay();
-
-          setTimeout(() => {
-            if (Model.state.playerList.length === 1) {
-              this.showQuestion();
-            } else {
-              Model.state.lastResult = null;
-              this.renderPlay();
-            }
-          }, 2500);
-        },
-        finishGame() {
-          playSfx(Sounds.finish);
-          const statsHtml = Model.state.playerList.map((p) => {
-            const s = Model.state.stats[p];
-            return `
-                <div class="glass p-5 rounded-2xl mb-3 border-l-4 border-cyan-500">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-black text-cyan-400 uppercase">${p}</span>
-                        <span class="bg-cyan-500 text-black px-3 py-1 rounded-lg font-black">${s.score} BALL</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 text-xs font-bold uppercase">
-                        <div class="text-emerald-400">To'g'ri: ${s.correct}</div>
-                        <div class="text-rose-500">Xato: ${s.wrong}</div>
-                    </div>
-                </div>`;
-          }).join("");
-
-          document.getElementById("app").innerHTML = `
-                <div class="w-full max-w-sm mx-auto text-center">
-                    <h1 class="text-4xl font-black mb-8 gradient-text uppercase italic">Natijalar</h1>
-                    <div class="mb-8 text-left">${statsHtml}</div>
-                    <button onclick="location.reload()" class="w-full bg-white text-black py-5 rounded-2xl font-black uppercase text-xl active:scale-95 shadow-2xl">Bosh sahifa</button>
-                </div>`;
-        },
-      };
-      window.onload = () => Controller.init();
+      function showModal(q) {
+        const m = document.createElement("div"); m.id = "modal"; m.className = "fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4 z-50";
+        m.innerHTML = `<div class="glass p-8 rounded-3xl w-full max-w-sm text-center border border-white/20">
+          <h2 class="text-xl font-bold mb-6 italic">"${q.q}"</h2>
+          <input id="ans" placeholder="JAVOBNI YOZING" class="w-full p-4 mb-4 rounded-xl bg-slate-900 border border-slate-700 text-center font-bold text-white outline-none">
+          <button onclick="check('${q.a}')" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase shadow-lg">Yuborish</button>
+        </div>`;
+        document.body.appendChild(m);
+      }
+      function check(correct) {
+        const val = document.getElementById("ans").value.toUpperCase();
+        if (val === correct) {
+          db.ref("rooms/" + roomId + "/players/" + myName + "/score").transaction((s) => (s || 0) + 10);
+          alert("TO'G'RI!");
+        } else { alert("XATO! To'g'ri javob: " + correct); }
+        db.ref("rooms/" + roomId).update({ answered: true });
+      }
+      showStart();
     </script>
   </body>
 </html>
