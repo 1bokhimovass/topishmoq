@@ -14,6 +14,7 @@
       .gradient-text { background: linear-gradient(135deg, #22d3ee 0%, #818cf8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
       #wheel { width: 260px; height: 260px; border-radius: 50%; border: 8px solid #1e293b; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1); position: relative; }
       .pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #fbbf24; z-index: 50; }
+      input { text-transform: uppercase; }
     </style>
   </head>
   <body>
@@ -53,19 +54,24 @@
         { q: "Kelsang kelaverasan, o'zing bilan olib keta olmaysan.", a: "KOLANKA" },
         { q: "Uzoqdan ko'rinsa tog'dek, yaqiniga borsa bog'dek.", a: "PAXTA" }
       ];
+
+      function handleInput(e) {
+        e.target.value = e.target.value.replace(/[^a-zA-Z']/g, "").toUpperCase();
+      }
+
       function showStart() {
         document.getElementById("app").innerHTML = `
           <div class="glass p-8 rounded-[2rem]">
             <h1 class="text-3xl font-black mb-6 gradient-text italic">BILIM JANGI</h1>
-            <input id="nInp" placeholder="ISMINGIZ (LOTIN)" class="w-full p-4 mb-3 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
-            <input id="rInp" type="number" placeholder="XONA KODI" class="w-full p-4 mb-6 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
+            <input id="nInp" oninput="handleInput(event)" placeholder="ISMINGIZ (LOTIN)" class="w-full p-4 mb-3 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
+            <input id="rInp" type="number" placeholder="KOD" class="w-full p-4 mb-6 rounded-xl bg-slate-900 border border-slate-700 font-bold text-center text-white outline-none">
             <button onclick="join()" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase active:scale-95 shadow-lg">Kirish</button>
           </div>`;
       }
       function join() {
         roomId = document.getElementById("rInp").value;
         myName = document.getElementById("nInp").value.toUpperCase();
-        if (!roomId || !myName) return alert("Ism va xona kodini kiriting!");
+        if (!roomId || !myName) return alert("Ism va kodni kiriting!");
         db.ref("rooms/" + roomId + "/players/" + myName).set({ score: 0 });
         db.ref("rooms/" + roomId).on("value", (snap) => render(snap.val()));
       }
@@ -92,7 +98,7 @@
         const m = document.createElement("div"); m.id = "modal"; m.className = "fixed inset-0 bg-slate-950/95 flex items-center justify-center p-4 z-50";
         m.innerHTML = `<div class="glass p-8 rounded-3xl w-full max-w-sm text-center border border-white/20">
           <h2 class="text-xl font-bold mb-6 italic">"${q.q}"</h2>
-          <input id="ans" placeholder="JAVOBNI YOZING" class="w-full p-4 mb-4 rounded-xl bg-slate-900 border border-slate-700 text-center font-bold text-white outline-none">
+          <input id="ans" oninput="handleInput(event)" placeholder="JAVOBNI YOZING" class="w-full p-4 mb-4 rounded-xl bg-slate-900 border border-slate-700 text-center font-bold text-white outline-none">
           <button onclick="check('${q.a}')" class="w-full bg-cyan-600 py-4 rounded-xl font-bold uppercase shadow-lg">Yuborish</button>
         </div>`;
         document.body.appendChild(m);
